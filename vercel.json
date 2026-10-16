@@ -1,0 +1,25 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/api",
+      "destination": "/api/index?__meld_path="
+    },
+    {
+      "source": "/api/health",
+      "destination": "/api/index?__meld_path=health"
+    },
+    {
+      "source": "/api/auth/me",
+      "destination": "/api/index?__meld_path=auth/me"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index?__meld_path=$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

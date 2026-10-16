@@ -1,0 +1,59 @@
+{
+  "name": "meld-app",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n web,api -c green,blue \"vite --configLoader runner\" \"npm:dev:api\"",
+    "dev:web": "vite --configLoader runner",
+    "dev:api": "tsx watch server/src/index.ts",
+    "db:migrate": "tsx server/src/migrate.ts",
+    "build": "tsc -b && tsc --noEmit -p server/tsconfig.json && vite build --configLoader runner",
+    "lint": "oxlint src server vite.config.ts vitest.config.ts",
+    "test": "vitest run --configLoader runner --no-fsModuleCache",
+    "test:watch": "vitest --configLoader runner --no-fsModuleCache",
+    "assets:optimize": "node scripts/optimize-assets.mjs",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.7",
+    "express": "^5.3.0",
+    "firebase": "^13.0.0",
+    "firebase-admin": "^14.5.0",
+    "helmet": "^8.3.0",
+    "lucide-react": "^1.57.0",
+    "pg": "^8.23.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router": "^8.4.0",
+    "tailwindcss": "^4.3.3",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.13.3",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@types/supertest": "^7.2.1",
+    "@vitejs/plugin-react": "^6.1.1",
+    "concurrently": "^10.0.6",
+    "jsdom": "^29.1.1",
+    "oxlint": "^1.81.0",
+    "sharp": "^0.35.5",
+    "supertest": "^7.3.1",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.4"
+  }
+}
