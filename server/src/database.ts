@@ -1,6 +1,7 @@
 import { Pool, type PoolClient } from 'pg';
 import { config, hasDatabaseConfig } from './config.js';
 import { HttpError } from './errors.js';
+import { SUPABASE_DATABASE_ROOT_CA } from './supabase-ca.js';
 
 export type MeldUser = {
   id: string;
@@ -30,12 +31,10 @@ export function getPool() {
       max: 1,
       idleTimeoutMillis: 10_000,
       connectionTimeoutMillis: 5_000,
-      // Supabase recommends SSL for serverless connections. Requiring TLS
-      // keeps traffic encrypted; certificate verification can be enabled
-      // later by supplying Supabase's database CA certificate to this pool.
-      // The runtime currently has no project CA bundle, and strict default
-      // trust validation rejects the Supavisor certificate chain.
-      ssl: { rejectUnauthorized: false },
+      // Verify both the Supabase certificate chain and pooler hostname.
+      // The public Supabase root CA is bundled in this server-only module so
+      // Vercel has it at runtime without an extra secret or filesystem asset.
+      ssl: { ca: SUPABASE_DATABASE_ROOT_CA, rejectUnauthorized: true },
       application_name: 'meld-api',
     });
   }
