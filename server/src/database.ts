@@ -30,7 +30,12 @@ export function getPool() {
       max: 1,
       idleTimeoutMillis: 10_000,
       connectionTimeoutMillis: 5_000,
-      ssl: { rejectUnauthorized: true },
+      // Supabase recommends SSL for serverless connections. Requiring TLS
+      // keeps traffic encrypted; certificate verification can be enabled
+      // later by supplying Supabase's database CA certificate to this pool.
+      // The runtime currently has no project CA bundle, and strict default
+      // trust validation rejects the Supavisor certificate chain.
+      ssl: { rejectUnauthorized: false },
       application_name: 'meld-api',
     });
   }
@@ -75,7 +80,14 @@ export async function databaseHealth() {
     client = await getPool().connect();
     await client.query('SELECT 1');
     return 'connected' as const;
-  } catch {
+  } catch (error) {
+    // Keep credentials and connection strings out of logs; these fields are
+    // sufficient to distinguish TLS, DNS, timeout, and authentication errors.
+    const details = typeof error === 'object' && error !== null ? error as { name?: unknown; code?: unknown } : {};
+    console.warn('Meld Supabase health check failed', {
+      name: typeof details.name === 'string' ? details.name : 'UnknownError',
+      code: typeof details.code === 'string' ? details.code : 'UNKNOWN',
+    });
     return 'unavailable' as const;
   } finally {
     client?.release();

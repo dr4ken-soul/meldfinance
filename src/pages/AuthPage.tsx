@@ -201,9 +201,13 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           <p className="auth-intro">
             {isRegister ? 'A few details first. Verify your email using the secure link we send.' : 'Sign in to continue to your Meld account.'}
           </p>
-          {verifiedNotice && <p className="form-message form-message--success" role="status">Your email is verified. Meld is checking your account access.</p>}
-          {error && <p className="form-message" role="alert">{error}</p>}
-          {status === 'unavailable' && <p className="form-message" role="status">Account access is not configured yet. The public pages remain available.</p>}
+          {(verifiedNotice || error || status === 'unavailable') && (
+            <div className="auth-notices" aria-live="polite">
+              {verifiedNotice && <p className="form-message form-message--success" role="status">Your email is verified. Meld is checking your account access.</p>}
+              {error && <p className="form-message" role="alert">{error}</p>}
+              {status === 'unavailable' && <p className="form-message" role="status">Account access is not configured yet. The public pages remain available.</p>}
+            </div>
+          )}
           <form className="auth-form" onSubmit={(event) => void submit(event)}>
             {isRegister && (
               <div className="field">
