@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>Verify your email | Meld</title>
+    <style>
+      @media screen and (max-width: 620px) {
+        .email-shell { width: 100% !important; }
+        .email-gutter { padding-left: 20px !important; padding-right: 20px !important; }
+        .email-card { padding: 30px 24px !important; }
+        .email-title { font-size: 34px !important; line-height: 1.08 !important; }
+        .email-button { display: block !important; text-align: center !important; }
+      }
+    </style>
+  </head>
+  <body style="margin:0;padding:0;background:#f2f5f2;color:#162622;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">
+      Confirm your email address to finish setting up your Meld account.
+    </div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:#f2f5f2;">
+      <tr>
+        <td align="center" class="email-gutter" style="padding:38px 24px;">
+          <table role="presentation" class="email-shell" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px;">
+            <tr>
+              <td style="padding:0 0 20px 4px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td valign="middle" style="padding-right:10px;">
+                      <img src="https://meld-app-sage.vercel.app/images/meld-logo-symbol.png" width="34" height="34" alt="" style="display:block;width:34px;height:34px;border:0;">
+                    </td>
+                    <td valign="middle" style="font-size:20px;font-weight:700;letter-spacing:-.7px;color:#162622;">Meld</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td class="email-card" style="padding:42px 46px 38px;background:#ffffff;border:1px solid #dce5df;border-radius:22px;">
+                <p style="margin:0 0 18px;color:#08756b;font-size:11px;font-weight:700;letter-spacing:2px;line-height:1.4;">ACCOUNT SECURITY</p>
+                <h1 class="email-title" style="margin:0;color:#162622;font-size:40px;font-weight:650;letter-spacing:-1.8px;line-height:1.04;">Confirm your email.</h1>
+                <p style="margin:20px 0 0;color:#586b66;font-size:16px;line-height:1.65;">Thanks for creating a Meld account. Confirm this email address to finish setting up your account and keep access in your hands.</p>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0 0;">
+                  <tr>
+                    <td bgcolor="#0b7168" style="border-radius:999px;">
+                      <a class="email-button" href="{{var:actionUrl}}" style="display:inline-block;padding:15px 25px;border:1px solid #0b7168;border-radius:999px;background:#0b7168;color:#ffffff;font-size:15px;font-weight:700;line-height:1.2;text-decoration:none;">Verify email address</a>
+                    </td>
+                  </tr>
+                </table>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:30px 0 0;">
+                  <tr><td height="1" style="height:1px;background:#e7ece8;font-size:1px;line-height:1px;">&nbsp;</td></tr>
+                </table>
+                <p style="margin:22px 0 8px;color:#586b66;font-size:13px;line-height:1.6;">If the button does not open, copy this link into your browser:</p>
+                <p style="margin:0;overflow-wrap:anywhere;color:#08756b;font-size:12px;line-height:1.65;"><a href="{{var:actionUrl}}" style="color:#08756b;text-decoration:underline;">{{var:actionUrl}}</a></p>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0 0;background:#f2f7f4;border:1px solid #e1ebe4;border-radius:14px;">
+                  <tr><td style="padding:15px 17px;color:#52655f;font-size:12px;line-height:1.6;"><strong style="color:#263c36;">A quick safety note.</strong> This one-time link is for you. Meld will never ask you to share it or your password. If you did not create this account, you can ignore this email.</td></tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 10px 0;color:#71817c;font-size:11px;line-height:1.7;">
+                <p style="margin:0;">Meld account security</p>
+                <p style="margin:5px 0 0;">You received this message because an account was created using this email address.</p>
+                <p style="margin:10px 0 0;">© 2026 Meld. Everyday bills, made clearer.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
