@@ -1,5 +1,5 @@
 import { FirebaseError } from 'firebase/app';
-import { createUserWithEmailAndPassword, reload, sendEmailVerification, signInWithEmailAndPassword, updateProfile, type User } from 'firebase/auth';
+import { createUserWithEmailAndPassword, reload, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile, type User } from 'firebase/auth';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router';
@@ -7,6 +7,7 @@ import { Brand } from '../components/Brand';
 import { useAuth } from '../auth/useAuth';
 import { getFirebaseAuth, requireFirebaseAuth } from '../lib/firebase';
 import { ApiError } from '../lib/api';
+import { recordAuthActivity } from '../lib/authEvents';
 
 type AuthMode = 'register' | 'sign-in';
 
@@ -31,6 +32,10 @@ function explainError(error: unknown) {
 
 function verificationContinueUrl() {
   return `${window.location.origin}/sign-in?verified=1`;
+}
+
+function passwordResetContinueUrl() {
+  return `${window.location.origin}/sign-in?reset=complete`;
 }
 
 function VerificationDialog({
@@ -91,6 +96,8 @@ function VerificationDialog({
         setError('Meld has not received confirmation yet. Open the latest verification link, then try again.');
         return;
       }
+      await user.getIdToken(true);
+      await recordAuthActivity('email_verified');
       const entered = await onVerified();
       if (!entered) setError('Your email is verified. Meld is still connecting your account. Try again shortly.');
     } catch (issue) {
@@ -132,6 +139,8 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [resetNotice, setResetNotice] = useState('');
+  const [resetBusy, setResetBusy] = useState(false);
   const [verificationError, setVerificationError] = useState('');
   const [pendingUser, setPendingUser] = useState<User | null>(() => {
     const existing = getFirebaseAuth()?.currentUser;
@@ -143,6 +152,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   });
   const verifiedNotice = new URLSearchParams(location.search).get('verified') === '1'
     || (location.state as { verified?: boolean } | null)?.verified;
+  const resetComplete = new URLSearchParams(location.search).get('reset') === 'complete';
 
   useEffect(() => {
     if (status === 'signed-in') navigate('/app', { replace: true });
@@ -152,6 +162,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     event.preventDefault();
     setBusy(true);
     setError('');
+    setResetNotice('');
     setVerificationError('');
 
     try {
@@ -159,6 +170,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       const normalizedEmail = email.trim().toLowerCase();
       if (isRegister) {
         const credential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
+        await recordAuthActivity('account_created');
         setPendingUser(credential.user);
         try {
           await updateProfile(credential.user, { displayName: fullName.trim() });
@@ -169,6 +181,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         setVerificationOpen(true);
       } else {
         const credential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
+        await recordAuthActivity('sign_in_succeeded');
         if (!credential.user.emailVerified) {
           setPendingUser(credential.user);
           setVerificationOpen(true);
@@ -182,6 +195,30 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       setError(explainError(issue));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function requestPasswordReset() {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      setError('Enter your email address first, then request a reset link.');
+      return;
+    }
+    setResetBusy(true);
+    setError('');
+    setResetNotice('');
+    try {
+      const auth = requireFirebaseAuth();
+      await sendPasswordResetEmail(auth, normalizedEmail, { url: passwordResetContinueUrl() });
+      setResetNotice('If an account uses that email address, we’ll send a password-reset link. Check your inbox and spam folder.');
+    } catch (issue) {
+      if (issue instanceof FirebaseError && issue.code === 'auth/user-not-found') {
+        setResetNotice('If an account uses that email address, we’ll send a password-reset link. Check your inbox and spam folder.');
+      } else {
+        setError(explainError(issue));
+      }
+    } finally {
+      setResetBusy(false);
     }
   }
 
@@ -201,9 +238,11 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           <p className="auth-intro">
             {isRegister ? 'A few details first. Verify your email using the secure link we send.' : 'Sign in to continue to your Meld account.'}
           </p>
-          {(verifiedNotice || error || status === 'unavailable') && (
+          {(verifiedNotice || resetComplete || resetNotice || error || status === 'unavailable') && (
             <div className="auth-notices" aria-live="polite">
               {verifiedNotice && <p className="form-message form-message--success" role="status">Your email is verified. Meld is checking your account access.</p>}
+              {resetComplete && <p className="form-message form-message--success" role="status">Your password has been updated. Sign in with your new password.</p>}
+              {resetNotice && <p className="form-message form-message--success" role="status">{resetNotice}</p>}
               {error && <p className="form-message" role="alert">{error}</p>}
               {status === 'unavailable' && <p className="form-message" role="status">Account access is not configured yet. The public pages remain available.</p>}
             </div>
@@ -229,6 +268,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
               </div>
               {isRegister && <p className="field-hint">Use at least 12 characters. A longer passphrase is easier to remember and harder to guess.</p>}
             </div>
+            {!isRegister && <button className="auth-forgot-link" type="button" onClick={() => void requestPasswordReset()} disabled={resetBusy}>{resetBusy ? 'Sending reset link…' : 'Forgot password?'}</button>}
             <button className="button button--primary auth-submit" type="submit" disabled={busy || status === 'unavailable'}>
               {busy ? 'Please wait…' : isRegister ? 'Create account' : 'Sign in'}
             </button>

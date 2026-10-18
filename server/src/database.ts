@@ -10,6 +10,16 @@ export type MeldUser = {
   emailVerified: boolean;
 };
 
+export type MeldAuthEventType =
+  | 'account_created'
+  | 'email_verified'
+  | 'verified_session_observed'
+  | 'sign_in_succeeded'
+  | 'sign_out'
+  | 'profile_updated';
+
+export type MeldAuthEventSource = 'firebase_admin' | 'verified_client' | 'meld_api';
+
 type ProfileRow = {
   firebase_uid: string;
   full_name: string;
@@ -57,7 +67,6 @@ export async function upsertVerifiedProfile(input: { uid: string; email: string;
        VALUES ($1, lower($2), $3, now())
        ON CONFLICT (firebase_uid) DO UPDATE
        SET email = EXCLUDED.email,
-           full_name = EXCLUDED.full_name,
            email_verified_at = COALESCE(meld_user_profiles.email_verified_at, EXCLUDED.email_verified_at),
            updated_at = now()
        RETURNING firebase_uid, full_name, email, email_verified_at`,
@@ -69,6 +78,49 @@ export async function upsertVerifiedProfile(input: { uid: string; email: string;
       throw new HttpError(409, 'PROFILE_CONFLICT', 'This email is already connected to a Meld profile. Contact support if you think this is an error.');
     }
     throw error;
+  }
+}
+
+export async function recordAuthEvent(input: {
+  uid: string;
+  eventType: MeldAuthEventType;
+  source: MeldAuthEventSource;
+  eventKey: string;
+  occurredAt?: string;
+}) {
+  await getPool().query(
+    `INSERT INTO meld_auth_events (firebase_uid, event_type, event_source, event_key, occurred_at)
+     VALUES ($1, $2, $3, $4, COALESCE($5::timestamptz, now()))
+     ON CONFLICT (firebase_uid, event_key) DO NOTHING`,
+    [input.uid, input.eventType, input.source, input.eventKey, input.occurredAt ?? null],
+  );
+}
+
+export async function updateVerifiedProfileName(input: { uid: string; fullName: string; eventKey: string }) {
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const result = await client.query<ProfileRow>(
+      `UPDATE meld_user_profiles
+       SET full_name = $2, updated_at = now()
+       WHERE firebase_uid = $1
+       RETURNING firebase_uid, full_name, email, email_verified_at`,
+      [input.uid, input.fullName],
+    );
+    if (!result.rows[0]) throw new HttpError(404, 'PROFILE_NOT_FOUND', 'Meld could not find the profile connected to this sign-in.');
+    await client.query(
+      `INSERT INTO meld_auth_events (firebase_uid, event_type, event_source, event_key)
+       VALUES ($1, 'profile_updated', 'meld_api', $2)
+       ON CONFLICT (firebase_uid, event_key) DO NOTHING`,
+      [input.uid, input.eventKey],
+    );
+    await client.query('COMMIT');
+    return mapProfile(result.rows[0]);
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
   }
 }
 

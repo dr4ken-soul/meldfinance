@@ -1,6 +1,7 @@
 import { onAuthStateChanged, reload, signOut as firebaseSignOut, type User } from 'firebase/auth';
 import { useCallback, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { apiRequest, ApiError } from '../lib/api';
+import { recordAuthActivity } from '../lib/authEvents';
 import { getFirebaseAuth, hasFirebaseClientConfig } from '../lib/firebase';
 import { AuthContext, type AuthStatus, type MeldUser } from './context';
 
@@ -65,11 +66,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const signOut = useCallback(async () => {
     const auth = getFirebaseAuth();
+    if (auth?.currentUser) await recordAuthActivity('sign_out');
     if (auth) await firebaseSignOut(auth);
     setUser(null);
     setStatus(auth ? 'signed-out' : 'unavailable');
   }, []);
 
-  const value = useMemo(() => ({ status, user, refresh, signOut }), [status, user, refresh, signOut]);
+  const updateFullName = useCallback(async (fullName: string) => {
+    const result = await apiRequest<{ user: MeldUser }>('/auth/me', {
+      method: 'PATCH',
+      body: JSON.stringify({ fullName }),
+    });
+    setUser(result.user);
+    return result.user;
+  }, []);
+
+  const value = useMemo(() => ({ status, user, refresh, signOut, updateFullName }), [status, user, refresh, signOut, updateFullName]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -11,12 +11,14 @@ import { getVariations, purchaseBill, requeryBill, verifyBiller } from '../provi
 
 export const paymentRoutes = Router();
 
-const networks = {
+export const networks = {
   airtime: [
     { id: 'mtn', name: 'MTN' }, { id: 'airtel', name: 'Airtel' }, { id: 'glo', name: 'Glo' },
+    { id: 'etisalat', name: '9mobile' },
   ],
   data: [
     { id: 'mtn-data', name: 'MTN' }, { id: 'airtel-data', name: 'Airtel' }, { id: 'glo-data', name: 'Glo' },
+    { id: 'etisalat-data', name: '9mobile' },
   ],
   electricity: [
     { id: 'ikeja-electric', name: 'Ikeja Electric' }, { id: 'eko-electric', name: 'Eko Electric' },

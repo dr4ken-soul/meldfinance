@@ -7,6 +7,7 @@ export type AuthContextValue = {
   user: MeldUser | null;
   refresh: () => Promise<boolean>;
   signOut: () => Promise<void>;
+  updateFullName: (fullName: string) => Promise<MeldUser>;
 };
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

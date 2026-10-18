@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { readFile } from 'node:fs/promises';
 import { getPool, closeDatabase } from './database.js';
 
-const migrations = ['001_user_profiles', '002_bill_payments'];
+const migrations = ['001_user_profiles', '002_bill_payments', '003_auth_activity'];
 
 async function migrate() {
   const pool = getPool();

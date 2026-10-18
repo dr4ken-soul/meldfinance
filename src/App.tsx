@@ -5,6 +5,7 @@ import { useAuth } from './auth/useAuth';
 
 const PublicSite = lazy(() => import('./pages/PublicSite').then(({ PublicSite: page }) => ({ default: page })));
 const AuthPage = lazy(() => import('./pages/AuthPage').then(({ AuthPage: page }) => ({ default: page })));
+const AuthActionPage = lazy(() => import('./pages/AuthActionPage').then(({ AuthActionPage: page }) => ({ default: page })));
 const ProductShell = lazy(() => import('./pages/ProductShell').then(({ ProductShell: page }) => ({ default: page })));
 
 function PrivateRoute() {
@@ -38,6 +39,7 @@ function AppRoutes() {
         <Route path="/" element={<PublicSite />} />
         <Route path="/register" element={<AuthPage mode="register" />} />
         <Route path="/sign-in" element={<AuthPage mode="sign-in" />} />
+        <Route path="/auth/action" element={<AuthActionPage />} />
         <Route path="/app/*" element={<PrivateRoute />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
