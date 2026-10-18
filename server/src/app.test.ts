@@ -25,6 +25,11 @@ describe('Meld API integration boundary', () => {
     expect(response.body.error.code).toBe('AUTH_REQUIRED');
   });
 
+  it('validates reset-link addresses before attempting email delivery', async () => {
+    const response = await request(createApp()).post('/api/auth/password-reset').send({ email: 'not-an-email' }).expect(400);
+    expect(response.body.error.code).toBe('INVALID_EMAIL');
+  });
+
   it('includes VTPass 9mobile identifiers for airtime and data', () => {
     expect(networks.airtime).toContainEqual({ id: 'etisalat', name: '9mobile' });
     expect(networks.data).toContainEqual({ id: 'etisalat-data', name: '9mobile' });

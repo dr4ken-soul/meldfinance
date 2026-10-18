@@ -1,11 +1,10 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { Activity, ArrowRight, Check, ChevronDown, CircleUserRound, LayoutDashboard, Pencil, ReceiptText, Zap } from 'lucide-react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router';
-import { sendPasswordResetEmail } from 'firebase/auth';
 import { Brand } from '../components/Brand';
 import { useAuth } from '../auth/useAuth';
 import type { MeldUser } from '../auth/context';
-import { getFirebaseAuth } from '../lib/firebase';
+import { apiRequest } from '../lib/api';
 import { PayPage } from './PayPage';
 import { ActivityPage } from './ActivityPage';
 
@@ -124,9 +123,8 @@ export function ProductShell() {
   }
 
   async function handlePasswordReset() {
-    const auth = getFirebaseAuth();
-    if (!auth || !user?.email) throw new Error('Meld could not identify the signed-in email. Sign out and sign in again.');
-    await sendPasswordResetEmail(auth, user.email, { url: `${window.location.origin}/sign-in?reset=complete` });
+    if (!user?.email) throw new Error('Meld could not identify the signed-in email. Sign out and sign in again.');
+    await apiRequest('/auth/password-reset', { method: 'POST', body: JSON.stringify({ email: user.email }) });
   }
 
   if (!user) return null;

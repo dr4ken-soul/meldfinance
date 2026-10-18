@@ -30,6 +30,14 @@ export function firebaseAdminReady() {
   return hasFirebaseAdminConfig();
 }
 
+export async function generateFirebaseEmailVerificationLink(email: string, continueUrl: string) {
+  return getFirebaseAuth().generateEmailVerificationLink(email, { url: continueUrl });
+}
+
+export async function generateFirebasePasswordResetLink(email: string, continueUrl: string) {
+  return getFirebaseAuth().generatePasswordResetLink(email, { url: continueUrl });
+}
+
 async function verifyFirebaseIdentity(request: Request) {
   const authorization = request.header('authorization');
   const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];

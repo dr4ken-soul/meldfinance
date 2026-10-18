@@ -1,19 +1,19 @@
 import { FirebaseError } from 'firebase/app';
-import { createUserWithEmailAndPassword, reload, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile, type User } from 'firebase/auth';
+import { createUserWithEmailAndPassword, reload, signInWithEmailAndPassword, updateProfile, type User } from 'firebase/auth';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { Brand } from '../components/Brand';
 import { useAuth } from '../auth/useAuth';
 import { getFirebaseAuth, requireFirebaseAuth } from '../lib/firebase';
-import { ApiError } from '../lib/api';
+import { ApiError, apiRequest } from '../lib/api';
 import { recordAuthActivity } from '../lib/authEvents';
 
 type AuthMode = 'register' | 'sign-in';
 
 function explainError(error: unknown) {
   if (error instanceof ApiError && error.status === 503) {
-    return 'Meld’s account services are not fully connected yet. Check the Firebase and Supabase settings with the project setup guide.';
+    return 'Meld’s account or email services are not fully connected yet. Check the Firebase, Supabase and Mailjet settings with the project setup guide.';
   }
   if (error instanceof ApiError && error.status === 429) return 'Too many attempts. Wait a little before trying again.';
   if (error instanceof ApiError && error.status === 0) return error.message;
@@ -28,14 +28,6 @@ function explainError(error: unknown) {
     if (error.code === 'auth/operation-not-allowed') return 'Email and password sign-in has not been enabled in the Firebase project yet.';
   }
   return error instanceof Error ? error.message : 'Something went wrong. Please try again.';
-}
-
-function verificationContinueUrl() {
-  return `${window.location.origin}/sign-in?verified=1`;
-}
-
-function passwordResetContinueUrl() {
-  return `${window.location.origin}/sign-in?reset=complete`;
 }
 
 function VerificationDialog({
@@ -76,7 +68,7 @@ function VerificationDialog({
     setError('');
     setNotice('');
     try {
-      await sendEmailVerification(user, { url: verificationContinueUrl() });
+      await apiRequest('/auth/verification-email', { method: 'POST', body: JSON.stringify({}) });
       setCooldown(60);
       setNotice('A new verification link has been sent. Check your inbox and spam folder.');
     } catch (issue) {
@@ -174,7 +166,11 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         setPendingUser(credential.user);
         try {
           await updateProfile(credential.user, { displayName: fullName.trim() });
-          await sendEmailVerification(credential.user, { url: verificationContinueUrl() });
+        } catch (issue) {
+          setVerificationError(explainError(issue));
+        }
+        try {
+          await apiRequest('/auth/verification-email', { method: 'POST', body: JSON.stringify({}) });
         } catch (issue) {
           setVerificationError(explainError(issue));
         }
@@ -208,15 +204,10 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     setError('');
     setResetNotice('');
     try {
-      const auth = requireFirebaseAuth();
-      await sendPasswordResetEmail(auth, normalizedEmail, { url: passwordResetContinueUrl() });
+      await apiRequest('/auth/password-reset', { method: 'POST', body: JSON.stringify({ email: normalizedEmail }) });
       setResetNotice('If an account uses that email address, we’ll send a password-reset link. Check your inbox and spam folder.');
     } catch (issue) {
-      if (issue instanceof FirebaseError && issue.code === 'auth/user-not-found') {
-        setResetNotice('If an account uses that email address, we’ll send a password-reset link. Check your inbox and spam folder.');
-      } else {
-        setError(explainError(issue));
-      }
+      setError(explainError(issue));
     } finally {
       setResetBusy(false);
     }

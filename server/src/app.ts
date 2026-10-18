@@ -2,7 +2,7 @@ import express, { type ErrorRequestHandler } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { authRoutes } from './routes/authRoutes.js';
-import { config, hasFirebaseAdminConfig, hasPaymentProviderConfig, hasVtpassConfig, hasFlutterwaveSandboxConfig, hasPaymentEncryptionConfig } from './config.js';
+import { config, hasFirebaseAdminConfig, hasMailjetConfig, hasPaymentProviderConfig, hasVtpassConfig, hasFlutterwaveSandboxConfig, hasPaymentEncryptionConfig } from './config.js';
 import { databaseHealth } from './database.js';
 import { firebaseAdminReady } from './auth.js';
 import { HttpError } from './errors.js';
@@ -27,7 +27,7 @@ export function createApp() {
       readiness: {
         database,
         firebase: firebaseAdminReady() ? 'configured' : 'not_configured',
-        email: hasFirebaseAdminConfig() ? 'firebase_managed' : 'not_configured',
+        email: hasFirebaseAdminConfig() && hasMailjetConfig() ? 'mailjet_configured' : 'not_configured',
         payments: hasPaymentProviderConfig() ? 'sandbox_ready' : 'not_configured',
         paymentSetup: {
           vtpass: hasVtpassConfig() ? 'configured' : 'not_configured',
