@@ -205,7 +205,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     setResetNotice('');
     try {
       await apiRequest('/auth/password-reset', { method: 'POST', body: JSON.stringify({ email: normalizedEmail }) });
-      setResetNotice('If an account uses that email address, we’ll send a password-reset link. Check your inbox and spam folder.');
+      setResetNotice('Request received. If a Meld account is linked to this email, a reset link will arrive shortly. Check your inbox, spam or promotions folder.');
     } catch (issue) {
       setError(explainError(issue));
     } finally {

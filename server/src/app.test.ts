@@ -30,6 +30,11 @@ describe('Meld API integration boundary', () => {
     expect(response.body.error.code).toBe('INVALID_EMAIL');
   });
 
+  it('requires a verified Firebase session for the account-specific reset action', async () => {
+    const response = await request(createApp()).post('/api/auth/password-reset/me').send({}).expect(401);
+    expect(response.body.error.code).toBe('AUTH_REQUIRED');
+  });
+
   it('includes VTPass 9mobile identifiers for airtime and data', () => {
     expect(networks.airtime).toContainEqual({ id: 'etisalat', name: '9mobile' });
     expect(networks.data).toContainEqual({ id: 'etisalat-data', name: '9mobile' });

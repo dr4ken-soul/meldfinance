@@ -6,6 +6,7 @@ import { updateVerifiedProfileName } from '../database.js';
 import { HttpError } from '../errors.js';
 import { config, hasMailjetConfig } from '../config.js';
 import { sendMeldEmail } from '../mailjet.js';
+import { toMeldActionUrl } from '../emailActionLink.js';
 
 export const authRoutes = Router();
 
@@ -43,6 +44,16 @@ function emailCooldownKey(kind: 'verification' | 'password-reset', email: string
   return `${kind}:${digest}`;
 }
 
+async function sendPasswordResetEmail(email: string) {
+  reserveEmailSend(emailCooldownKey('password-reset', email));
+  const firebaseActionUrl = await generateFirebasePasswordResetLink(
+    email,
+    new URL('/sign-in?reset=complete', config.WEB_ORIGIN).toString(),
+  );
+  const actionUrl = toMeldActionUrl(firebaseActionUrl, 'resetPassword', config.WEB_ORIGIN);
+  await sendMeldEmail({ kind: 'password_reset', to: email, actionUrl });
+}
+
 authRoutes.get('/me', requireVerifiedFirebaseUser, async (request: Request, response: Response) => {
   const user = await getVerifiedMeldUser(request);
   response.setHeader('Cache-Control', 'no-store');
@@ -57,10 +68,11 @@ authRoutes.post('/verification-email', requireFirebaseIdentity, async (request: 
 
   const email = identity.email.toLowerCase();
   reserveEmailSend(emailCooldownKey('verification', email));
-  const actionUrl = await generateFirebaseEmailVerificationLink(
+  const firebaseActionUrl = await generateFirebaseEmailVerificationLink(
     email,
     new URL('/sign-in?verified=1', config.WEB_ORIGIN).toString(),
   );
+  const actionUrl = toMeldActionUrl(firebaseActionUrl, 'verifyEmail', config.WEB_ORIGIN);
   await sendMeldEmail({ kind: 'verification', to: email, actionUrl });
   response.status(202).json({ sent: true });
 });
@@ -71,13 +83,8 @@ authRoutes.post('/password-reset', async (request: Request, response: Response) 
   if (!hasMailjetConfig()) throw new HttpError(503, 'EMAIL_NOT_CONFIGURED', 'Meld email delivery is not configured for this environment yet.');
 
   const email = parsed.data.email;
-  reserveEmailSend(emailCooldownKey('password-reset', email));
   try {
-    const actionUrl = await generateFirebasePasswordResetLink(
-      email,
-      new URL('/sign-in?reset=complete', config.WEB_ORIGIN).toString(),
-    );
-    await sendMeldEmail({ kind: 'password_reset', to: email, actionUrl });
+    await sendPasswordResetEmail(email);
   } catch (error) {
     const details = typeof error === 'object' && error !== null ? error as { code?: unknown } : {};
     const code = typeof details.code === 'string' ? details.code : 'UNKNOWN';
@@ -87,6 +94,15 @@ authRoutes.post('/password-reset', async (request: Request, response: Response) 
   }
 
   response.status(202).json({ accepted: true });
+});
+
+authRoutes.post('/password-reset/me', requireVerifiedFirebaseUser, async (request: Request, response: Response) => {
+  const identity = (request as AuthenticatedRequest).meldIdentity;
+  if (!identity?.email) throw new HttpError(401, 'AUTH_REQUIRED', 'Sign in to continue.');
+  if (!hasMailjetConfig()) throw new HttpError(503, 'EMAIL_NOT_CONFIGURED', 'Meld email delivery is not configured for this environment yet.');
+
+  await sendPasswordResetEmail(identity.email.toLowerCase());
+  response.status(202).json({ sent: true });
 });
 
 authRoutes.patch('/me', requireVerifiedFirebaseUser, async (request: Request, response: Response) => {

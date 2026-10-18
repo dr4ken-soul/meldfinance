@@ -68,7 +68,7 @@ function AccountPage({ user, onNameSave, onPasswordReset }: {
     setNotice('');
     try {
       await onPasswordReset();
-      setNotice('If this address can receive a reset, a secure link is on its way. Check your inbox and spam folder.');
+      setNotice('Reset email sent. Open the secure link in your inbox to choose a new password. Check spam or promotions if it is missing.');
     } catch (issue) {
       setError(issue instanceof Error ? issue.message : 'Meld could not send a reset link. Try again.');
     } finally {
@@ -98,7 +98,7 @@ function AccountPage({ user, onNameSave, onPasswordReset }: {
       </section>
       <section className="account-panel account-security-panel" aria-labelledby="security-title">
         <div className="account-panel-heading"><div><p className="eyebrow">SIGN-IN & SECURITY</p><h2 id="security-title">Password</h2></div></div>
-        <p>Send a secure password-reset link to <strong>{user.email}</strong>. The link is handled by Firebase and Meld will never ask you to share your password.</p>
+        <p>We’ll send a one-time password-reset link to <strong>{user.email}</strong>. Use it to set a new password. Meld never receives or stores your password.</p>
         <button className="button button--secondary" type="button" onClick={() => void sendResetLink()} disabled={resetBusy}>{resetBusy ? 'Sending link…' : 'Send password reset link'}</button>
       </section>
       {(error || notice) && <div className="account-feedback" aria-live="polite">{error ? <p className="form-message" role="alert">{error}</p> : <p className="form-message form-message--success" role="status">{notice}</p>}</div>}
@@ -124,7 +124,7 @@ export function ProductShell() {
 
   async function handlePasswordReset() {
     if (!user?.email) throw new Error('Meld could not identify the signed-in email. Sign out and sign in again.');
-    await apiRequest('/auth/password-reset', { method: 'POST', body: JSON.stringify({ email: user.email }) });
+    await apiRequest('/auth/password-reset/me', { method: 'POST', body: JSON.stringify({}) });
   }
 
   if (!user) return null;
